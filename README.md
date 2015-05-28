@@ -1,6 +1,6 @@
 # Otto
-Code for 85th place (out of 3514) in Kaggle Otto Production Classification Challenge (private leaderboard)
-Link: https://www.kaggle.com/c/otto-group-product-classification-challenge 
+Code for 85th place (out of 3514) in Kaggle Otto Production Classification Challenge (private leaderboard).
+* Link: https://www.kaggle.com/c/otto-group-product-classification-challenge 
 
 # Useful feature engineering steps
 * Sum of all features for each row

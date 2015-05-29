@@ -9,14 +9,14 @@ library(caret)
 ### load train data and create matrices for xgb
 ############################################################################
 train <- read.csv("train.csv", header = T)
-train$id <- NULL # set id to NULL
+train$id <- NULL  # remove ID
 set.seed(668)
 train <- train[sample(nrow(train)), ]  # shuffle data
 
 # create target vector
 train.y <- train$target
 train.y <- gsub('Class_','', train.y)
-train.y <- as.integer(train.y) - 1 #xgboost take features in [0,numOfClass)
+train.y <- as.integer(train.y) - 1  #xgboost take features in [0, number of classes)
 
 # create matrix of original features for train.x
 train.x <- train
@@ -24,8 +24,9 @@ train.x$target <- NULL
 train.x <- as.matrix(train.x)
 train.x <- matrix(data = as.numeric(train.x), nrow = nrow(train.x), ncol = ncol(train.x))
 
+
 ############################################################################
-### create useful functions (check log loss specific to xgb)
+### create useful functions (check log loss specific to xgb; requires matrix creation)
 ############################################################################
 ### create function to compute logloss on test set in one step
 checkLogLoss2 <- function(model, xgbdata, traindata) {
@@ -43,6 +44,7 @@ checkLogLoss2 <- function(model, xgbdata, traindata) {
   truth <- predict(dummy.fit, newdata = traindata)  # ground truth
   LogLoss(truth, pred)
 }
+
 
 ############################################################################
 ### try creating a small xgb model
@@ -89,6 +91,7 @@ xgb.fit <- xgboost(param = xg.param, data = train.x[in.train, ],
 
 # check feature importance
 xgb.importance(feature_names = names(train), model = xgb.fit)
+
 
 ############################################################################
 ### xgb using original + aggregated features
@@ -170,7 +173,7 @@ checkLogLoss2(xgb.fit, train.x[-in.train, ], train[-in.train, ])
 # fit model on full training data
 xgb.fit <- xgboost(param = xg.param, data = train.x, 
                         label = train.y, nrounds = cv.rounds)
-# LB score = 0.43609 (You improved on your best score by 0.0046)
+# LB score = 0.43609
 
 
 ############################################################################

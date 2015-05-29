@@ -12,14 +12,14 @@ getDoParWorkers()
 ############################################################################
 # load training data
 train <- read.csv("train.csv", header = T)
-train$id <- NULL  # set id to NULL
+train$id <- NULL  # remove ID
 set.seed(668)
 train <- train[sample(nrow(train)), ]  # shuffle data
 
 # load testing data
 test <- read.csv("test.csv", header = T)
 test.id <- test$id
-test$id <- NULL
+test$id <- NULL  # remove ID
 
 # partition into training and validation set
 set.seed(668)
@@ -41,7 +41,8 @@ actual <- matrix(data = c(0, 1, 0, 1, 0, 0, 0, 0, 1), nrow = 3)
 pred <- matrix(data = c(0.2, 0.7, 0.1, 0.6, 0.2, 0.2, 0.6, 0.1, 0.3), 
                nrow = 3, byrow = T)
 
-LogLoss(actual, pred)  # this should be 0.6904911
+LogLoss(actual, pred)  # this should be 0.6904911 if the function is working correction
+
 
 # create function to compute logloss on validation set using ground truth
 checkLogLoss <- function(model, data) {
@@ -59,7 +60,8 @@ checkLogLoss <- function(model, data) {
   LogLoss(truth, pred)
 }
 
-# create custom logloss summary function for use with caret
+
+# create custom logloss summary function for use with caret cross validation
 LogLossSummary <- function(data, lev = NULL, model = NULL) {
   
   # this is slightly different from function above as above function leads to errors
@@ -91,6 +93,7 @@ LogLossSummary <- function(data, lev = NULL, model = NULL) {
   
   out
 }
+
 
 # create function to create submissions
 # note: file should be a string
@@ -139,6 +142,7 @@ gbm.fit <- train(target ~., data = train[in.train, ],
                     n.minobsinnode = 4, bag.fraction = 0.9)
 
 checkLogLoss(gbm.fit, train[-in.train, ])  # log.loss = 0.509993
+
 
 # good practice to close connections when done
 showConnections()

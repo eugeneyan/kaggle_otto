@@ -7,10 +7,12 @@ detectCores()
 registerDoParallel(detectCores() - 1) 
 getDoParWorkers()
 
+# packages for models
 library(randomForest)
 library(glmnet)
 library(party)
 
+# packages for data munging and visualization
 library(dplyr)
 library(ggplot2)
 
@@ -18,7 +20,7 @@ library(ggplot2)
 ### feature selection with glmnet (did not help much)
 ############################################################################
 # glmnet
-# note: glmnet in caret is unable to let glmnet choose lambda range
+# note: caret is unable to let glmnet choose lambda range 
 x <- model.matrix(target ~., data = train[in.train, ])[, -1]
 y <- train[in.train, ]$target
 
@@ -77,17 +79,9 @@ rf.imp$Vars <- row.names(rf.imp)
 rf.20 <- rf.imp[order(-rf.imp$MeanDecreaseAccuracy),][1:20,]$Vars
 
 
-# small cforest (unusable)
-cf.fit <- cforest(target ~., data = train[in.train, ], 
-                  control = cforest_unbiased(mtry = 9, ntree = 200))
-
-# see importance of CF variables (could not run)
-cf.imp <- varimp(cf.fit, conditional = T, threshold = 0.8)
-
-
 # small gbm
 gbm.grid <- expand.grid(interaction.depth = 10,
-                        n.trees = 50,
+                        n.trees = 100,
                         shrinkage = 0.01)
 
 gbm.fit <- train(target ~., data = train[in.train, ], 
@@ -107,8 +101,16 @@ gbm.20 <- gbm.imp[order(-gbm.imp$Overall),][1:20,]$Vars
 # combine top features identified by rf and gbm
 top.feats <- unique(c(gbm.20, rf.20))
 
+
+# small cforest (unusable as it takes very long to calculate conditional importance)
+cf.fit <- cforest(target ~., data = train[in.train, ], 
+                  control = cforest_unbiased(mtry = 9, ntree = 200))
+
+# see importance of CF variables (could not run)
+cf.imp <- varimp(cf.fit, conditional = T, threshold = 0.8)  # runs fine when conditional = F
+
 ############################################################################
-### testing ground using a small sample set
+### creating new features with a small sample set
 ############################################################################
 # take small sample for testing
 set.seed(100)
@@ -144,7 +146,7 @@ for (i in 1:93) {
 }
 
 
-### create +, -, *, / features using top 20 features
+### create +, -, *, / features using top 20 features (useful with original features but not useful after features were mean-standardized)
 # select top 20 features
 feat.20 <- train %>%
   select(c(feat_11, feat_60, feat_34, feat_90, feat_14,
@@ -195,7 +197,7 @@ for (i in 1:93) {
   eval(parse(text = paste0('feat$feat_flag_', i, ' <- ifelse(feat[, i] == 0, 0, 1)')))
 }
 
-### features for difference from mean
+### features for difference from mean  (works well)
 for (i in 1:93) {
   eval(parse(text = paste0('feat$feat_mean_', i, ' <- feat[, i] - mean(feat[, i])')))
 }
@@ -203,11 +205,12 @@ for (i in 1:93) {
 feat <- feat[-c(1:93)]
 str(feat)
 
-### features after normalization
+### features after normalization  (works, but less well relative to difference from mean)
 for (i in 1:93) {
   eval(parse(text = paste0('feat$feat_norm_', i, ' <- (feat[, i] - mean(feat[, i]))/sd(feat[, 1])')))
 }
 
+### remove original features
 feat <- feat[-c(1:93)]
 str(feat)
 

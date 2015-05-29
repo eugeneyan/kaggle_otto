@@ -1,5 +1,5 @@
 ######################################################################
-## download and install H2O
+### download and install H2O
 ######################################################################
 
 # The following two commands remove any previously installed H2O packages for R.
@@ -20,39 +20,31 @@ if (! ("utils" %in% rownames(installed.packages()))) { install.packages("utils")
 install.packages("h2o", type="source", repos=(c("http://h2o-release.s3.amazonaws.com/h2o-dev/master/1179/R")))
 
 ######################################################################
-## launch H2O
+### launch H2O
 ######################################################################
-## Load h2o R module
+# Load h2o R module
 library(h2o)
 
-## Launch h2o on localhost, using all cores
+# Launch h2o on localhost, using all cores
 h2oServer <- h2o.init(nthreads = -1)
 
-## Point to directory where the Kaggle data is
-# dir <- paste0(path.expand("~"), "/h2o-kaggle/otto/")
-
-## For Spark/Hadoop/YARN/Standalone operation on a cluster, follow instructions on http://h2o.ai/download/
-## Then connect to any cluster node from R
-
-#h2oServer = h2o.init(ip="mr-0xd1",port=53322)
-#dir <- "hdfs://mr-0xd6/users/arno/h2o-kaggle/otto/"
 
 ######################################################################
-## load data sets and create train/validation split
+### load data sets and create train/validation split
 ######################################################################
-
 train.hex <- h2o.importFile(paste0("C:/Users/IBM_ADMIN/Desktop/Eugene's/Otto/train.norm.csv"), destination_frame="train.hex")
 test.hex <- h2o.importFile(paste0("C:/Users/IBM_ADMIN/Desktop/Eugene's/Otto/test.csv"), destination_frame="test.hex")
 dim(train.hex)
 
-## Split into 80/20 Train/Validation
+# Split into 80/20 Train/Validation
 train_holdout.hex <- h2o.assign(train.hex[in.train,], "train_holdout.hex")
 dim(train_holdout.hex)
 valid_holdout.hex <- h2o.assign(train.hex[in.valid,], "valid_holdout.hex")
 dim(valid_holdout.hex)
 
+
 ######################################################################
-## parameter tuning with random search
+### parameter tuning with random search
 ######################################################################
 models <- c()
 for (i in 1:10) {
@@ -89,9 +81,8 @@ for (i in 1:10) {
 )
   models <- c(models, dlmodel)
 }
-Sys.time()
 
-## Find the best model (lowest logloss on the validation holdout set)
+# Find the best model (lowest logloss on the validation holdout set)
 best_err <- 1e3 
 for (i in 1:length(models)) {
   err <- h2o.logloss( h2o.performance(models[[i]], valid_holdout.hex))
@@ -119,7 +110,7 @@ h2o.confusionMatrix(valid_perf)
 h2o.logloss(valid_perf)  # 0.5348277
 
 ######################################################################
-## h2o NN with best found params
+### h2o NN with best found params
 ######################################################################
 h2o.fit <- h2o.deeplearning(x = 2:94, y = 1, 
                             training_frame = train_holdout.hex, 
@@ -145,20 +136,19 @@ h2o.logloss(valid_perf)  # 0.5283119
 View(h2o.fit@model$scoring_history)
 
 ######################################################################
-## create predictions
+### create predictions
 ######################################################################
-
-## Predictions: label + 9 per-class probabilities
+# Predictions: label + 9 per-class probabilities
 pred <- predict(h2o.fit, test.hex)
 head(pred)
 
-## Remove label
+# Remove label
 pred <- pred[,-1]
 head(pred)
 
-## Paste the ids (first col of test set) together with the predictions
+# Paste the ids (first col of test set) together with the predictions
 submission <- h2o.cbind(test.hex[,1], pred)
 head(submission)
 
-## Save submission to disk
+# Save submission to disk
 h2o.exportFile(submission, paste0(dir, "h2o.pred.csv"))

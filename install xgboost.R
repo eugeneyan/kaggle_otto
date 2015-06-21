@@ -1,2 +1,6 @@
+# instructions here: https://github.com/dmlc/xgboost/blob/master/doc/build.md
+
+# install.packages('devtools')
 library(devtools)
-devtools::install_github('dmlc/xgboost',subdir='R-package')
+
+install.packages('xgboost/R-package/', repos=NULL, type='source')
